@@ -1,0 +1,49 @@
+.patient-intake-form {
+  background: #ffffff;
+  padding: 16px;
+  width: 65%;
+  margin: 42px auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  font-family: "Roboto", sans-serif;
+  min-width: 275px;
+}
+
+.title {
+  font-weight: 300;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+
+.form-input {
+  width: 45%;
+  padding: 6px;
+  font-size: 16px;
+}
+
+.input {
+  width: 100%;
+  padding: 6px;
+  font-size: 16px;
+}
+
+@media (max-width: 550px) {
+  .form-section {
+    display: block;
+  }
+
+  .form-input {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 16px;
+  }
+
+  .form-input:last-child {
+    margin-bottom: 0;
+  }
+}

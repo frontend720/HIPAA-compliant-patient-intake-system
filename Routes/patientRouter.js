@@ -1,8 +1,10 @@
 const express = require("express");
 const patientRouter = express.Router();
 const Patient = require("../Models/PatientSchema");
+const Audit = require("../Models/AuditSchema");
 const auth = require("../Middleware/auth");
 const isPatient = require("../Middleware/isPatient");
+const isProviderOrSelf = require("../Middleware/isProviderOrSelf.js");
 
 patientRouter.post("/", auth, isPatient, async (req, res) => {
   try {
@@ -26,14 +28,21 @@ patientRouter.post("/", auth, isPatient, async (req, res) => {
   }
 });
 
-patientRouter.patch("/:id", async (req, res) => {
+patientRouter.patch("/:id", auth, isPatient, async (req, res) => {
   try {
     const { id } = req.params;
-    let patient = await Patient.findByIdAndUpdate(
-      id,
+    let patient = await Patient.findOneAndUpdate(
+      { user: id },
       { $set: req.body },
       { new: true, runValidators: true }
     );
+    const audit = new Audit({
+      user: patient._id,
+      action: "UPDATE_PATIENT_PROFILE",
+      ipAddress: req.ip,
+      targetUser: id,
+    });
+    audit.save();
     if (!patient) {
       return res.status(400).send({ message: "Patient not found" });
     }
@@ -55,29 +64,41 @@ patientRouter.get("/", async (req, res) => {
   }
 });
 
-patientRouter.get("/:id", async (req, res) => {
+patientRouter.get("/:id", auth, isProviderOrSelf, async (req, res) => {
   const { id } = req.params;
   try {
-    const patient = await Patient.findById({ _id: id });
-    if (!patient) {
-      return res.status(400).send({ message: "Patient not found" });
-    }
     if (!id) {
       return res.status(400).send({ message: "Patient ID is required" });
     }
+    const patient = await Patient.findOne({ user: id });
+    if (!patient) {
+      return res.status(400).send({ message: "Patient not found" });
+    }
+
+    const audit = new Audit({
+      user: patient._id,
+      action: "VIEW_PATIENT_PROFILE",
+      ipAddress: req.ip,
+      targetUser: id,
+
+    });
+     await audit.save();
+ 
     res.status(200).send(patient);
   } catch (error) {
     res.status(500).send({ message: "Server error." + error });
   }
 });
+// const patient = await Patient.findById({ _id: id });
 
-patientRouter.get("/", async (req, res) => {
+patientRouter.delete("/:id", auth, isPatient, async (req, res) => {
+  const { id } = req.params;
   try {
-    const patient = await Patient.find({});
+    const patient = await Patient.findByIdAndDelete({ _id: id });
     if (!patient) {
-      return res.status(400).send({ message: "No patients found" });
+      return res.status(400);
     }
-    res.status(200).send(patient);
+    return res.status(200).send({ message: "Patient deleted successfully" });
   } catch (error) {
     res.status(500).send({ message: "Server error." + error });
   }

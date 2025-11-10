@@ -7,10 +7,7 @@ const isPatient = require("../Middleware/isPatient");
 auditRouter.post("/", auth, isPatient, async (req, res) => {
   try {
     const userId = req.user.id;
-    let audit = await Audit({ user: userId });
-    if (!audit) {
-      return res.status(400).send({ message: "Audit already exists." });
-    }
+    let audit = await Audit.findOne({ user: userId });
     audit = new Audit({
       ...req.body,
       user: userId,
@@ -21,5 +18,17 @@ auditRouter.post("/", auth, isPatient, async (req, res) => {
     res.status(500).send({ message: "Server error." + error });
   }
 });
+
+auditRouter.get("/", async (req, res) => {
+    const audits = await Audit.find({})
+    try {
+        if(!audits){
+            return res.status(400).send({ message: "No audits found" });
+        }
+        res.status(200).send(audits)
+    } catch (error) {
+        res.status(500).send({message: "Server error." + error})
+    }
+})
 
 module.exports = auditRouter
